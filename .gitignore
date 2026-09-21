@@ -11,4 +11,5 @@ env/
 .DS_Store
 
 json/*.json
+json/old brain/
 !json/.gitkeep

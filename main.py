@@ -1,6 +1,7 @@
 import pygame
 import time
 import os
+import copy
 
 from Car import PlayerCar
 from input import *
@@ -15,8 +16,16 @@ pygame.init()
 
 # Setting 
 
-NUMBER_OF_CAR = 1
+NUMBER_OF_CAR = 100
+NUMBER_OF_BEST_CAR = 20
+NUMBER_OF_PARENT = 3
 
+SIMULATION_TIME_MINUTES = 1
+TIMEOUT = 10
+
+TOTAL_GENERATION = 1
+
+#Debuggin setting
 DEBUG = True
 
 SHOW_CHECKPOINT = False
@@ -25,11 +34,6 @@ BESTCAR_UPDATE = True
 STAGNATION_CHECK = False
 
 KEEP_OPEN = False
-
-SIMULATION_TIME_MINUTES = 3
-TIMEOUT = 10
-
-TOTAL_GENERATION = 2
 
 Frame = 60
 clock = pygame.time.Clock()
@@ -43,22 +47,13 @@ RED  =(255, 0, 0)
 
 #Track Setup
 
-track = Track3()
-
-WIDTH, HEIGHT = track.track_dimension
-
-screen = pygame.display.set_mode((WIDTH+500, HEIGHT))
+tracks = [Track1(),Track3()] 
 
 pygame.display.set_caption("Car Game")
 
 
-images = [
-    (track.finish, track.finish_pos),
-    (track.track, (0,0))
-]
 
-
-def generateCars(N):
+def generateCars(N, track):
     cars= []
     for i in range(N):
 
@@ -82,17 +77,38 @@ def generateCars(N):
             "lap_times": [],
             "lap_num": 0,
             "active?": True,
-            "last_progress_time": time.time()
-            
+            "last_progress_time": time.time(),
+            "fitness": 0
         })
     return cars
 
-def draw(win, images, cars, visualizer):
-    screen.fill(DARK_GRAY)
+def resetCars(cars , track):
+    for agent in cars:
+
+        car = agent["car"]
+
+        #reset car position
+        car.reset(*track.start_pos)
+
+        # Reset agent state
+        agent["sensor"] = Sensor(
+            car,
+            track.track_border_mask
+        )
+
+        agent["current_checkpoint"] = 0
+        agent["lap_start_time"] = None
+        agent["lap_times"] = []
+        agent["lap_num"] = 0
+        agent["active?"] = True
+        agent["last_progress_time"] = time.time()
+
+def draw(win, images, cars, visualizer, track):
+    win.fill(DARK_GRAY)
 
     for checkpoint in track.checkpoints:
         pygame.draw.rect(
-            screen,
+            win,
             RED,
             checkpoint["rect"]
         )
@@ -109,24 +125,26 @@ def draw(win, images, cars, visualizer):
         car.draw(win)
         sensor.draw(win)
 
-    visualizer.draw(screen)
+    visualizer.draw(win)
 
     pygame.display.update()
 
 
-def run_generation():
+def run_track(cars, track):
     simulation_start_time = time.time()
 
-    #create Cars
-    cars = generateCars(NUMBER_OF_CAR)
+    resetCars(cars, track)
 
-    #Load Best Brain
-    if os.path.exists("json/best_brain.json"):
-        for i, agent in enumerate(cars):
-            load_brain( agent["brain"], "best_brain.json")
+    WIDTH, HEIGHT = track.track_dimension
 
-            if i != 0:
-                NeuralNetwork.mutate(agent["brain"], 0.2)
+    screen = pygame.display.set_mode(
+        (WIDTH + 500, HEIGHT)
+    )
+
+    images = [
+        (track.finish, track.finish_pos),
+        (track.track, (0, 0))
+    ]
 
     #Generation Setup
     bestCar = cars[0]
@@ -257,29 +275,59 @@ def run_generation():
         visualizer.brain = bestBrain
 
         #draw
-        draw(screen,images,cars,visualizer)
+        draw(screen,images,cars,visualizer,track)
             
         clock.tick(Frame)
 
-    return bestCar, cars
-
-    #Main
 def main():
     generation = 1
-
+    
     while generation <= TOTAL_GENERATION:
-
-        print(
-            f"\n Generation {generation}"
+        # Create the population every generation
+        cars = generateCars(
+            NUMBER_OF_CAR,
+            tracks[0]
         )
 
-        bestCar, cars = run_generation()
+        # #Load Best Brain
+        if os.path.exists("json/best_brains.json"):
 
-        # if NUMBER_OF_CAR != 1:
-        #     save_brain(bestCar["brain"], "best_brain.json")
+            number_to_load = load_brains(
+                cars,
+                "best_brains.json",
+                NUMBER_OF_BEST_CAR
+            )
 
-        #     print("Best Brain Saved")
-        #     save_lap_data(cars,generation)
+            if number_to_load > 0:
+                for i in range(number_to_load, NUMBER_OF_CAR):
+
+                    parent_index = i % NUMBER_OF_PARENT
+
+                    cars[i]["brain"]= copy.deepcopy( cars[parent_index]["brain"])
+
+                    #mutate
+                    NeuralNetwork.mutate(cars[i]["brain"], 0.2)
+
+        print(f"\n Generation {generation}")
+
+        for track in tracks:
+            
+            print(f"Running {track.__class__.__name__}")
+
+            run_track(cars,track)
+
+            for agent in cars:
+                #calculate each car progress through each track and edded up
+                track_fitness = ( (agent["lap_num"]-1) + agent["current_checkpoint"]/len(track.checkpoints))
+                agent["fitness"] += track_fitness
+
+        best_cars = sorted(cars, key=lambda agent: agent["fitness"], reverse=True)[:NUMBER_OF_BEST_CAR]
+
+        if NUMBER_OF_CAR != 1:
+            save_brains(best_cars, "best_brains.json")
+
+            print("Best Brain Saved")
+        save_lap_data(cars,generation)
 
         generation += 1
     

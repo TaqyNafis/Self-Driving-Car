@@ -64,7 +64,7 @@ class Track1(AbstractTrack):
         return (50,424)
 
     def get_start_pos(self):
-        return (125, 400, 0)
+        return (125, 450, 0)
 
     def get_checkpoints(self):
         checkpoint_data = [
