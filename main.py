@@ -6,26 +6,32 @@ import copy
 from Game.Car import PlayerCar
 from Game.input import move_player
 from Game.Sensor import Sensor
+from Game.track import *
 from NeuralNetwork.network import NeuralNetwork
 from NeuralNetwork.Visualizer import NetworkVisualizer
-from Game.track import *
 from Extra.save import save_brains,load_brains,save_lap_data
 from Game.event_handler import handle_events
 from Evolution.selection import select_parents
 from Evolution.mutation import mutate
+from Evolution.crossover import crossover
 
 pygame.init()
 
 # Setting 
 
-SELECTION_METHOD = "top"
+SELECTION_METHOD = "random"
 MUTATION_METHOD = "default"
+CROSSOVER_METHOD = "one_point"
 
-NUMBER_OF_CAR = 30
-NUMBER_OF_BEST_CAR = 20
-NUMBER_OF_PARENT = 3
+NUMBER_OF_CAR = 100 
+NUMBER_OF_SAVED_BRAIN= NUMBER_OF_CAR # Number of car to have their brain saved
+NUMBER_OF_ELITE =  5 # Number of Top best car to continue into the next generation
 
 MUTATION_AMOUNT = 0.2
+MUTATION_RATE = 0.1
+
+USE_CROSSOVER = True
+USE_MUTATION = True
 
 SIMULATION_TIME_MINUTES = 2
 TIMEOUT = 10
@@ -287,7 +293,7 @@ def run_track(cars, track):
         clock.tick(Frame)
 
     return {
-        f"car {agent['number']}": agent["lap_times"].copy()
+        agent["number"]: agent["lap_times"].copy()
         for agent in cars
         if agent["lap_times"]
     }
@@ -297,38 +303,29 @@ def main():
     
     while generation <= TOTAL_GENERATION:
         # Create the population every generation
-        cars = generateCars(
-            NUMBER_OF_CAR,
-            tracks[0]
-        )
+        cars = generateCars( NUMBER_OF_CAR, tracks[0])
 
-        # #Load Best Brain
-        if os.path.exists("json/best_brains.json"):
+        #Load Best Brain
+        if os.path.exists("json/saved_brains.json"):
 
-            number_to_load = load_brains(
-                cars,
-                "best_brains.json",
-                NUMBER_OF_BEST_CAR
-            )
+            number_to_load = load_brains(cars, "saved_brains.json", NUMBER_OF_SAVED_BRAIN)
+            elite_count = min(NUMBER_OF_ELITE, number_to_load)
 
             if number_to_load > 0:
-                parents = select_parents(
-                    cars[:number_to_load],
-                    NUMBER_OF_PARENT,
-                    SELECTION_METHOD
-                )
+                parents = cars[:number_to_load]
 
-                for i in range(number_to_load, NUMBER_OF_CAR):
+                for i in range(elite_count, NUMBER_OF_CAR):
 
-                    parent = parents[(i - number_to_load) % len(parents)]
-                    cars[i]["brain"]= copy.deepcopy( parent["brain"])
+                    parent1, parent2 = select_parents( parents, SELECTION_METHOD)
 
-                    mutate(
-                        cars[i]["brain"],
-                        MUTATION_METHOD,
-                        MUTATION_AMOUNT
-                    )
+                    if USE_CROSSOVER:
+                        cars[i]["brain"] = crossover(parent1["brain"], parent2["brain"], CROSSOVER_METHOD
+)
+                    else:
+                        cars[i]["brain"] = copy.deepcopy(parent1["brain"])
 
+                    if USE_MUTATION:
+                        mutate(cars[i]["brain"],MUTATION_METHOD,MUTATION_AMOUNT, MUTATION_RATE)
         print(f"\n Generation {generation}")
 
         generation_data = {}
@@ -346,10 +343,10 @@ def main():
                 track_fitness = track.training_weight * ((agent["lap_num"]-1) + agent["current_checkpoint"]/len(track.checkpoints))
                 agent["fitness"] += track_fitness
 
-        best_cars = sorted(cars, key=lambda agent: agent["fitness"], reverse=True)[:NUMBER_OF_BEST_CAR]
+        best_cars = sorted(cars, key=lambda agent: agent["fitness"], reverse=True )[:NUMBER_OF_SAVED_BRAIN]
 
         if NUMBER_OF_CAR != 1:
-            save_brains(best_cars, "best_brains.json")
+            save_brains(best_cars, "saved_brains.json")
 
             print("Best Brain Saved")
         save_lap_data(generation_data, generation)

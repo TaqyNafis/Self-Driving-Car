@@ -1,11 +1,13 @@
 import random
 
-def select_parents(cars, number_of_parents, method="tops"):
-    if method == "top":
-        return cars[:number_of_parents]
 
-    elif method == "random":
-        return random.sample(cars, number_of_parents)
+def select_parents(parents, method="random"):
+
+    if method == "random":
+        parent1 = random.choice(parents)
+        parent2 = random.choice(parents)
+
+        return parent1, parent2
 
     else:
-        raise ValueError(f"Uknown selection method: {method}")
+        raise ValueError(f"Unknown selection method: {method}")
