@@ -61,27 +61,10 @@ def load_brains(cars, filename, number_of_best_cars):
     return number_to_load
 
 
-def save_lap_data(cars, generation):
-    lap_data = {}
-
-    for agent in cars:
-        if not agent["lap_times"]:
-            continue
-
-        car_number = agent["number"]
-
-        lap_data[f"car{car_number}"] = {
-            "lap_times": {
-                f"lap_time {i}": lap_time
-                for i, lap_time in enumerate(
-                    agent["lap_times"],
-                    start=1
-                )
-            }
-        }
+def save_lap_data(generation_data, generation):
 
     with open(
         f"json/lap_times_generation_{generation}.json",
         "w"
     ) as file:
-        json.dump(lap_data, file, indent=4)
+        json.dump(generation_data, file, indent=4)

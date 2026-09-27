@@ -4,12 +4,12 @@ import os
 import copy
 
 from Game.Car import PlayerCar
-from Game.input import *
+from Game.input import move_player
 from Game.Sensor import Sensor
 from NeuralNetwork.network import NeuralNetwork
 from NeuralNetwork.Visualizer import NetworkVisualizer
 from Game.track import *
-from Extra.save import *
+from Extra.save import save_brains,load_brains,save_lap_data
 from Game.event_handler import handle_events
 from Evolution.selection import select_parents
 from Evolution.mutation import mutate
@@ -21,7 +21,7 @@ pygame.init()
 SELECTION_METHOD = "top"
 MUTATION_METHOD = "default"
 
-NUMBER_OF_CAR = 1
+NUMBER_OF_CAR = 30
 NUMBER_OF_BEST_CAR = 20
 NUMBER_OF_PARENT = 3
 
@@ -286,6 +286,12 @@ def run_track(cars, track):
             
         clock.tick(Frame)
 
+    return {
+        f"car {agent['number']}": agent["lap_times"].copy()
+        for agent in cars
+        if agent["lap_times"]
+    }
+
 def main():
     generation = 1
     
@@ -314,8 +320,8 @@ def main():
 
                 for i in range(number_to_load, NUMBER_OF_CAR):
 
-                    parents = parents[(i - number_to_load) % len(parents)]
-                    cars[i]["brain"]= copy.deepcopy( parents["brain"])
+                    parent = parents[(i - number_to_load) % len(parents)]
+                    cars[i]["brain"]= copy.deepcopy( parent["brain"])
 
                     mutate(
                         cars[i]["brain"],
@@ -325,11 +331,15 @@ def main():
 
         print(f"\n Generation {generation}")
 
+        generation_data = {}
+
         for track in tracks:
             
             print(f"Running {track.__class__.__name__}")
 
-            run_track(cars,track)
+            lap_data = run_track(cars,track)
+
+            generation_data[track.__class__.__name__] = lap_data
 
             for agent in cars:
                 #calculate each car progress through each track and edded up
@@ -342,7 +352,7 @@ def main():
             save_brains(best_cars, "best_brains.json")
 
             print("Best Brain Saved")
-        save_lap_data(cars,generation)
+        save_lap_data(generation_data, generation)
 
         generation += 1
     
