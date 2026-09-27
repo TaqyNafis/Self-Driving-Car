@@ -1,5 +1,5 @@
 import random
-from utils import lerp
+from Extra.utils import lerp
 
 class NeuralNetwork:
     def __init__(self,neuronCounts):

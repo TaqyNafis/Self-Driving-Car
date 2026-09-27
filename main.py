@@ -3,24 +3,31 @@ import time
 import os
 import copy
 
-from Car import PlayerCar
-from input import *
+from Game.Car import PlayerCar
+from Game.input import *
 from Sensor import Sensor
-from network import *
+from NeuralNetwork.network import NeuralNetwork
 from Visualizer import NetworkVisualizer
 from track import *
 from save import *
-from event_handler import handle_events
+from Game.event_handler import handle_events
+from selection import select_parents
+from Evolution.mutation import mutate
 
 pygame.init()
 
 # Setting 
 
-NUMBER_OF_CAR = 100
+SELECTION_METHOD = "top"
+MUTATION_METHOD = "default"
+
+NUMBER_OF_CAR = 30
 NUMBER_OF_BEST_CAR = 20
 NUMBER_OF_PARENT = 3
 
-SIMULATION_TIME_MINUTES = 1
+MUTATION_AMOUNT = 0.2
+
+SIMULATION_TIME_MINUTES = 2
 TIMEOUT = 10
 
 TOTAL_GENERATION = 1
@@ -160,8 +167,8 @@ def run_track(cars, track):
 
         run, mouse_pos = handle_events()
 
-        if mouse_pos is not None:
-            print(mouse_pos)
+        # if mouse_pos is not None:
+        #     print(mouse_pos)
         
         # End Generation
         if (all(not agent["active?"] for agent in cars) or time.time() - simulation_start_time > SIMULATION_TIME_MINUTES * 60) and not KEEP_OPEN:
@@ -299,14 +306,22 @@ def main():
             )
 
             if number_to_load > 0:
+                parents = select_parents(
+                    cars[:number_to_load],
+                    NUMBER_OF_PARENT,
+                    SELECTION_METHOD
+                )
+
                 for i in range(number_to_load, NUMBER_OF_CAR):
 
-                    parent_index = i % NUMBER_OF_PARENT
+                    parents = parents[(i - number_to_load) % len(parents)]
+                    cars[i]["brain"]= copy.deepcopy( parents["brain"])
 
-                    cars[i]["brain"]= copy.deepcopy( cars[parent_index]["brain"])
-
-                    #mutate
-                    NeuralNetwork.mutate(cars[i]["brain"], 0.2)
+                    mutate(
+                        cars[i]["brain"],
+                        MUTATION_METHOD,
+                        MUTATION_AMOUNT
+                    )
 
         print(f"\n Generation {generation}")
 
@@ -318,7 +333,7 @@ def main():
 
             for agent in cars:
                 #calculate each car progress through each track and edded up
-                track_fitness = ( (agent["lap_num"]-1) + agent["current_checkpoint"]/len(track.checkpoints))
+                track_fitness = track.training_weight * ((agent["lap_num"]-1) + agent["current_checkpoint"]/len(track.checkpoints))
                 agent["fitness"] += track_fitness
 
         best_cars = sorted(cars, key=lambda agent: agent["fitness"], reverse=True)[:NUMBER_OF_BEST_CAR]

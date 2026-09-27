@@ -7,13 +7,18 @@ class AbstractTrack(ABC):
         self.track = self.load_track()
         self.track_border_mask = pygame.mask.from_surface(self.track)
         self.track_dimension = self.get_track_dimension()
+        
+        self.training_weight = self.get_training_weight()
+
         self.finish = self.load_finish()
         self.finish_pos = self.get_finish_pos()
         self.finish_mask = pygame.mask.from_surface(self.finish)
 
         self.start_pos = self.get_start_pos()
-
         self.checkpoints = self.get_checkpoints()
+
+
+        
 
     @abstractmethod
     def load_track(self):
@@ -28,6 +33,10 @@ class AbstractTrack(ABC):
         pass
 
     @abstractmethod
+    def get_finish_pos(self):
+        pass
+
+    @abstractmethod
     def get_start_pos(self):
         pass
 
@@ -35,6 +44,9 @@ class AbstractTrack(ABC):
     def get_checkpoints(self):
         pass
 
+    @abstractmethod
+    def get_training_weight(self):
+        pass
 
 
 
@@ -54,6 +66,9 @@ class Track1(AbstractTrack):
         height = self.track.get_height()
         width = self.track.get_width()
         return (width, height)
+
+    def  get_training_weight(self):
+        return 1
 
     def load_finish(self):
         finish = pygame.image.load("asset/finish.png")
@@ -117,6 +132,9 @@ class Track2(AbstractTrack):
         width = self.track.get_width()
         return (width, height)
 
+    def  get_training_weight(self):
+        return 0.5
+
     def load_finish(self):
         finish = pygame.image.load("asset/finish.png")
 
@@ -177,6 +195,9 @@ class Track3(AbstractTrack):
         height = self.track.get_height()
         width = self.track.get_width()
         return (width, height)
+
+    def  get_training_weight(self):
+        return 2
 
     def load_finish(self):
         finish = pygame.image.load("asset/finish.png")
