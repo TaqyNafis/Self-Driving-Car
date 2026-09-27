@@ -5,13 +5,13 @@ import copy
 
 from Game.Car import PlayerCar
 from Game.input import *
-from Sensor import Sensor
+from Game.Sensor import Sensor
 from NeuralNetwork.network import NeuralNetwork
-from Visualizer import NetworkVisualizer
-from track import *
-from save import *
+from NeuralNetwork.Visualizer import NetworkVisualizer
+from Game.track import *
+from Extra.save import *
 from Game.event_handler import handle_events
-from selection import select_parents
+from Evolution.selection import select_parents
 from Evolution.mutation import mutate
 
 pygame.init()
@@ -21,7 +21,7 @@ pygame.init()
 SELECTION_METHOD = "top"
 MUTATION_METHOD = "default"
 
-NUMBER_OF_CAR = 30
+NUMBER_OF_CAR = 1
 NUMBER_OF_BEST_CAR = 20
 NUMBER_OF_PARENT = 3
 
@@ -30,7 +30,7 @@ MUTATION_AMOUNT = 0.2
 SIMULATION_TIME_MINUTES = 2
 TIMEOUT = 10
 
-TOTAL_GENERATION = 1
+TOTAL_GENERATION = 2
 
 #Debuggin setting
 DEBUG = True

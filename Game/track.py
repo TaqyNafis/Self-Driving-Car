@@ -1,6 +1,6 @@
 import pygame
 from abc import ABC, abstractmethod
-from utils import scale_image
+from Extra.utils import scale_image
 
 class AbstractTrack(ABC):
     def __init__(self):

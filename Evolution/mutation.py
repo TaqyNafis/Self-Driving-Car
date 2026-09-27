@@ -1,4 +1,4 @@
-from network import NeuralNetwork
+from NeuralNetwork.network import NeuralNetwork
 
 def mutate(brain, method="default", amount = 0.2):
     if method == "default":

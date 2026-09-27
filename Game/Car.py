@@ -1,7 +1,7 @@
 import pygame
 import math
 
-from utils import blit_rotate_center, scale_image, lerp
+from Extra.utils import blit_rotate_center, scale_image, lerp
 
 CAR = scale_image(pygame.image.load("asset/car.png"),0.55)
 

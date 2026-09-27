@@ -1,7 +1,7 @@
 import pygame
 import math
 
-from utils import  lerp
+from Extra.utils import  lerp
 
 class Sensor:
     def __init__(self,car,track_mask):
