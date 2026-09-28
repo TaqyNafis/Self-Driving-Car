@@ -23,7 +23,7 @@ class NeuralNetwork:
     def mutate(network, amount, rate):
         for level in network.levels:
             for i in range(len(level.biases)):
-                if random.random < rate:
+                if random.random() < rate:
                     level.biases[i] = lerp(
                         level.biases[i],
                         random.random()* 2 - 1,
@@ -31,7 +31,7 @@ class NeuralNetwork:
                     )
             for i in range(len(level.weights)):
                 for j in range(len(level.weights[i])):
-                    if random.random < rate:
+                    if random.random() < rate:
                         level.weights[i][j] = lerp(
                             level.weights[i][j],
                             random.random()* 2 - 1,

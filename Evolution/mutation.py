@@ -5,3 +5,6 @@ def mutate(brain, method="default", amount =1, rate = 1):
         NeuralNetwork.mutate(brain, amount, rate)
     else:
         raise ValueError(f"unknown mutation method: {method}")
+    
+def get_mutation_methods():
+    return ["default"]

@@ -10,6 +10,6 @@ env/
 
 .DS_Store
 
-json/*.json
-json/old brain/
+json/
 !json/.gitkeep
+json/Laps/.gitkeep

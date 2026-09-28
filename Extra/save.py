@@ -62,9 +62,10 @@ def load_brains(cars, filename, number_of_best_cars):
 
 
 def save_lap_data(generation_data, generation):
+    filename = f"json/Laps"
 
     with open(
-        f"json/lap_times_generation_{generation}.json",
+        f"{filename}/lap_times_generation_{generation}.json",
         "w"
     ) as file:
         json.dump(generation_data, file, indent=4)

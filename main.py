@@ -11,26 +11,29 @@ from NeuralNetwork.network import NeuralNetwork
 from NeuralNetwork.Visualizer import NetworkVisualizer
 from Extra.save import save_brains,load_brains,save_lap_data
 from Game.event_handler import handle_events
-from Evolution.selection import select_parents
-from Evolution.mutation import mutate
-from Evolution.crossover import crossover
+from Evolution.selection import select_parents ,get_selection_methods
+from Evolution.mutation import mutate, get_mutation_methods
+from Evolution.crossover import crossover, get_crossover_methods
 
 pygame.init()
 
 # Setting 
 
-SELECTION_METHOD = "random"
+# "random" "rank"
+SELECTION_METHOD = "rank"
+# "default"
 MUTATION_METHOD = "default"
-CROSSOVER_METHOD = "one_point"
+#"one_point" "two point"
+CROSSOVER_METHOD = "two_point"
 
-NUMBER_OF_CAR = 100 
+NUMBER_OF_CAR = 100
 NUMBER_OF_SAVED_BRAIN= NUMBER_OF_CAR # Number of car to have their brain saved
 NUMBER_OF_ELITE =  5 # Number of Top best car to continue into the next generation
 
-MUTATION_AMOUNT = 0.2
-MUTATION_RATE = 0.1
+MUTATION_AMOUNT = 0.4
+MUTATION_RATE = 0.2
 
-USE_CROSSOVER = True
+USE_CROSSOVER = False
 USE_MUTATION = True
 
 SIMULATION_TIME_MINUTES = 2
@@ -50,6 +53,46 @@ KEEP_OPEN = False
 
 Frame = 60
 clock = pygame.time.Clock()
+
+#Setting Check
+if NUMBER_OF_CAR < 2 and  USE_CROSSOVER:
+    raise ValueError("NUMBER_OF_CAR must atleast be 2 if crossover want to be used")
+if NUMBER_OF_ELITE < 0 or NUMBER_OF_SAVED_BRAIN < 0 or MUTATION_AMOUNT < 0:
+    raise ValueError(
+        f"Value cannot be negative: "
+        f"NUMBER_OF_ELITE={NUMBER_OF_ELITE}, "
+        f"NUMBER_OF_SAVED_BRAIN={NUMBER_OF_SAVED_BRAIN}, "
+        f"MUTATION_AMOUNT={MUTATION_AMOUNT}"
+    )
+if TOTAL_GENERATION < 1 or NUMBER_OF_CAR < 1:
+    raise ValueError(
+        f"Value must be at least 1: "
+        f"TOTAL_GENERATION={TOTAL_GENERATION}, "
+        f"NUMBER_OF_CAR={NUMBER_OF_CAR}"
+    )
+if NUMBER_OF_ELITE > NUMBER_OF_CAR:
+    raise ValueError("NUMBER_OF_ELITE cannot be greater than NUMBER_OF_CAR")
+if NUMBER_OF_SAVED_BRAIN > NUMBER_OF_CAR:
+    raise ValueError("NUMBER_OF_SAVED_BRAIN cannot be greater than NUMBER_OF_CAR")
+if not 0 <= MUTATION_RATE <= 1:
+    raise ValueError("MUTATION_RATE must be between 0 and 1")
+if SELECTION_METHOD not in get_selection_methods():
+    raise ValueError(
+        f"Unknown selection method: {SELECTION_METHOD}. "
+        f"Available methods: {get_selection_methods()}"
+    )
+
+if CROSSOVER_METHOD not in get_crossover_methods():
+    raise ValueError(
+        f"Unknown crossover method: {CROSSOVER_METHOD}. "
+        f"Available methods: {get_crossover_methods()}"
+    )
+
+if MUTATION_METHOD not in get_mutation_methods():
+    raise ValueError(
+        f"Unknown mutation method: {MUTATION_METHOD}. "
+        f"Available methods: {get_mutation_methods()}"
+    )
 
 #Color
 

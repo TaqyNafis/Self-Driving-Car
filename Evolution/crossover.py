@@ -34,17 +34,30 @@ def one_point_crossover(parent1, parent2):
 
     crossover_point = random.randint(1, len(chromosome1) - 1)
 
-    child_chromosome = (
-        chromosome1[:crossover_point]
-        + chromosome2[crossover_point:]
-    )
+    child_chromosome = (chromosome1[:crossover_point]+ chromosome2[crossover_point:])
 
-    child = NeuralNetwork([
-        len(parent1.levels[0].inputs)
-    ] + [
-        len(level.outputs)
-        for level in parent1.levels
-    ])
+    child = NeuralNetwork([ len(parent1.levels[0].inputs)] + [ len(level.outputs) for level in parent1.levels ])
+
+    set_chromosome(child, child_chromosome)
+
+    return child
+
+def two_point_crossover(parent1, parent2):
+    chromosome1 = get_chromosome(parent1)
+    chromosome2 = get_chromosome(parent2)
+
+    if len(chromosome1) != len(chromosome2):
+        raise ValueError("Parents must have the same network structure")
+
+    if random.choice([True, False]):
+        chromosome1 , chromosome2 = chromosome2 , chromosome1
+
+    crossover_point1 = random.randint(1, len(chromosome1)//2 - 1)
+    crossover_point2= random.randint(len(chromosome1)//2 + 1, len(chromosome1) - 1)
+
+    child_chromosome =  chromosome1[:crossover_point1] + chromosome2[crossover_point1:crossover_point2] + chromosome1[crossover_point2:]
+
+    child = NeuralNetwork([ len(parent1.levels[0].inputs)] + [ len(level.outputs) for level in parent1.levels ])
 
     set_chromosome(child, child_chromosome)
 
@@ -54,5 +67,10 @@ def one_point_crossover(parent1, parent2):
 def crossover(parent1, parent2, method="one_point"):
     if method == "one_point":
         return one_point_crossover(parent1,parent2)
+    elif method == "two_point":
+        return two_point_crossover(parent1,parent2)
     else:
         raise ValueError(f"Unknown crossover method: {method}")
+
+def get_crossover_methods():
+    return ["one_point", "two_point"]
