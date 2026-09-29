@@ -62,10 +62,32 @@ def load_brains(cars, filename, number_of_best_cars):
 
 
 def save_lap_data(generation_data, generation):
-    filename = f"json/Laps"
+    filepath = f"json/Laps"
 
     with open(
-        f"{filename}/lap_times_generation_{generation}.json",
+        f"{filepath}/lap_times_generation_{generation}.json",
         "w"
     ) as file:
         json.dump(generation_data, file, indent=4)
+
+def build_generation_summary(generation, cars, generation_data):
+    TOP_N = 10
+    fitnesses = sorted((agent["fitness"] for agent in cars), reverse=True)
+    top = fitnesses[:TOP_N]
+
+    fitnesses = [agent["fitness"] for agent in cars]
+
+    return {
+        "generation": generation,
+        "best_fitness": top[0],
+        f"                                top {TOP_N}avg_fitness": sum(top) / len(top),
+        "finishers": {
+            track_name: len(lap_data)
+            for track_name, lap_data in generation_data.items()
+        }
+    }
+
+def save_run_summary(seed, summaries):
+    filepath = f"json/Summary"
+    with open(f"{filepath}/summary_seed{seed}.json", "w") as file:
+        json.dump({"seed": seed, "generations": summaries}, file, indent=4)

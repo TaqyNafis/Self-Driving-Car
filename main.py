@@ -2,6 +2,7 @@ import pygame
 import time
 import os
 import copy
+import random
 
 from Game.Car import PlayerCar
 from Game.input import move_player
@@ -9,7 +10,7 @@ from Game.Sensor import Sensor
 from Game.track import *
 from NeuralNetwork.network import NeuralNetwork
 from NeuralNetwork.Visualizer import NetworkVisualizer
-from Extra.save import save_brains,load_brains,save_lap_data
+from Extra.save import save_brains,load_brains,save_lap_data, build_generation_summary, save_run_summary
 from Game.event_handler import handle_events
 from Evolution.selection import select_parents ,get_selection_methods
 from Evolution.mutation import mutate, get_mutation_methods
@@ -18,7 +19,6 @@ from Evolution.crossover import crossover, get_crossover_methods
 pygame.init()
 
 # Setting 
-
 # "random" "rank"
 SELECTION_METHOD = "rank"
 # "default"
@@ -26,22 +26,28 @@ MUTATION_METHOD = "default"
 #"one_point" "two point"
 CROSSOVER_METHOD = "two_point"
 
-NUMBER_OF_CAR = 100
+NUMBER_OF_CAR = 150
 NUMBER_OF_SAVED_BRAIN= NUMBER_OF_CAR # Number of car to have their brain saved
-NUMBER_OF_ELITE =  5 # Number of Top best car to continue into the next generation
+NUMBER_OF_ELITE =  3 # Number of Top best car to continue into the next generation
 
 MUTATION_AMOUNT = 0.4
 MUTATION_RATE = 0.2
 
-USE_CROSSOVER = False
+USE_CROSSOVER = True
 USE_MUTATION = True
 
-SIMULATION_TIME_MINUTES = 2
+SIMULATION_TIME_MINUTES = 1
 TIMEOUT = 10
 
 TOTAL_GENERATION = 2
 
-#Debuggin setting
+#Seed
+SEED = 42 
+
+if SEED is not None:
+    random.seed(SEED)
+
+#Debugging setting
 DEBUG = True
 
 SHOW_CHECKPOINT = False
@@ -94,6 +100,8 @@ if MUTATION_METHOD not in get_mutation_methods():
         f"Available methods: {get_mutation_methods()}"
     )
 
+if os.path.exists("json/saved_brains.json"):
+    print("Warning: loading existing saved_brains.json (not a fresh start)")
 #Color
 
 WHITE = (255, 255, 255)
@@ -343,6 +351,7 @@ def run_track(cars, track):
 
 def main():
     generation = 1
+    run_summary = []
     
     while generation <= TOTAL_GENERATION:
         # Create the population every generation
@@ -393,6 +402,9 @@ def main():
 
             print("Best Brain Saved")
         save_lap_data(generation_data, generation)
+
+        run_summary.append(build_generation_summary(generation, cars, generation_data))
+        save_run_summary(SEED, run_summary)
 
         generation += 1
     

@@ -197,7 +197,7 @@ class Track3(AbstractTrack):
         return (width, height)
 
     def  get_training_weight(self):
-        return 2
+        return 3
 
     def load_finish(self):
         finish = pygame.image.load("asset/finish.png")
