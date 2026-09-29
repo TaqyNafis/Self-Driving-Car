@@ -10,6 +10,11 @@ env/
 
 .DS_Store
 
-json/
+json/*
 !json/.gitkeep
-json/Laps/.gitkeep
+!json/Laps/
+json/Laps/*
+!json/Laps/.gitkeep
+!json/Summary/
+json/Summary/*
+!json/Summary/.gitkeep
