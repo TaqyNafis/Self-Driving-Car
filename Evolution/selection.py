@@ -1,20 +1,20 @@
 import random
 
-def random_selection(parents):
+def random_selection(parents,two_parents):
         parent1 = random.choice(parents)
 
-        if len(parents) == 1:
+        if len(parents) == 1 or not two_parents:
             return parent1, parent1
 
         while  True:
             parent2 = random.choice(parents)
 
-            if parent1 != parent2:
+            if parent1 is not parent2:
                 break
 
         return parent1, parent2
 
-def rank_selection(parents):
+def rank_selection(parents, two_parents):
     # RANK_POWER controls selection pressure: weight = 1 / rank**RANK_POWER
     # Higher = top cars dominate, lower = more diversity.
     # (approx. pick chance with 150 parents)
@@ -34,24 +34,65 @@ def rank_selection(parents):
 
     parent1 = random.choices(parents, weights= rank_weights, k =1)[0]
 
-    if len(parents) == 1:
+    if len(parents) == 1 or not two_parents:
         return parent1, parent1
     
     while True:
         parent2 = random.choices(parents, weights= rank_weights, k =1)[0]
-        if parent1 != parent2:
+        if parent1 is not parent2:
              break
     return parent1 , parent2
+
+def tournament_selection_parent(parents):
+
+    TOURNAMENT_SIZE = 15
+    pool = random.sample(parents, k = min(len(parents) , TOURNAMENT_SIZE ))
+    parent = max(pool, key=lambda a:a["parent_fitness"])
+
+    return parent
+
+def tournament_selection(parents, two_parents):
+
+    parent1 = tournament_selection_parent(parents)
+
+    if len(parents) == 1 or not two_parents:
+        return parent1, parent1
+    
+    while True:
+        parent2 = tournament_selection_parent(parents)
+        if parent1 is not parent2:
+             break
+    return parent1 , parent2
+
+def roulette_wheel_selection(parents, two_parents):
+    weights = [max(p["parent_fitness"], 0.01) for p in parents]  
+
+    parent1 = random.choices(parents, weights= weights)[0]
+
+    if len(parents) == 1 or not two_parents:
+        return parent1, parent1
+    
+    while True:
+        parent2 = random.choices(parents, weights= weights)[0]
+        if parent1 is not parent2:
+             break
+    return parent1 , parent2
+    
+
    
 
-def select_parents(parents, method="random"):
+def select_parents(parents, method="random", two_parents=True):
 
     if method == "random":
-        return random_selection(parents)
+        return random_selection(parents, two_parents)
     elif method == "rank":
-        return rank_selection(parents)     
+        return rank_selection(parents, two_parents)
+    elif method == "tournament":
+        return tournament_selection(parents, two_parents)
+    elif method == "roulette":
+        return roulette_wheel_selection(parents, two_parents)
     else:
         raise ValueError(f"Unknown selection method: {method}")
 
 def get_selection_methods():
-    return ["random", "rank"]
+    return ["random", "rank", "tournament", "roulette"]

@@ -57,6 +57,7 @@ def load_brains(cars, filename, number_of_best_cars):
             cars[i]["brain"],
             data["brains"][i]
         )
+        cars[i]["parent_fitness"] = data["brains"][i]["fitness"]
 
     return number_to_load
 

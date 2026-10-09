@@ -19,8 +19,8 @@ from Evolution.crossover import crossover, get_crossover_methods
 pygame.init()
 
 # Setting 
-# "random" "rank"
-SELECTION_METHOD = "rank"
+# "random" "rank" "tournament" "roulette"
+SELECTION_METHOD = "tournament"
 # "default"
 MUTATION_METHOD = "default"
 #"one_point" "two point"
@@ -39,8 +39,8 @@ USE_MUTATION = True
 SIMULATION_TIME_MINUTES = 1
 TIMEOUT = 10
 
-TOTAL_GENERATION = 3
-SEED = None
+TOTAL_GENERATION = 10
+SEED = 25
 
 #Debugging setting
 DEBUG = True
@@ -169,7 +169,8 @@ def generateCars(N, track):
             "lap_num": 0,
             "active?": True,
             "last_progress_time": time.time(),
-            "fitness": 0
+            "fitness": 0,
+            "parent_fitness" : 0
         })
     return cars
 
@@ -392,11 +393,13 @@ def main():
             elite_count = min(NUMBER_OF_ELITE, number_to_load)
 
             if number_to_load > 0:
-                parents = cars[:number_to_load]
-
+                parents = [
+                    { "brain": copy.deepcopy(c["brain"]), "parent_fitness": c["parent_fitness"] }
+                    for c in cars[:number_to_load]
+                ]
                 for i in range(elite_count, NUMBER_OF_CAR):
 
-                    parent1, parent2 = select_parents( parents, SELECTION_METHOD)
+                    parent1, parent2 = select_parents( parents, SELECTION_METHOD, USE_CROSSOVER)
 
                     if USE_CROSSOVER:
                         cars[i]["brain"] = crossover(parent1["brain"], parent2["brain"], CROSSOVER_METHOD
