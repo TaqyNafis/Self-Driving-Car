@@ -8,7 +8,8 @@ class AbstractTrack(ABC):
         self.track_border_mask = pygame.mask.from_surface(self.track)
         self.track_dimension = self.get_track_dimension()
         
-        self.training_weight = self.get_training_weight()
+        self.target_time = self.get_target_time()
+        self.weight = self.get_weight()
 
         self.finish = self.load_finish()
         self.finish_pos = self.get_finish_pos()
@@ -45,7 +46,11 @@ class AbstractTrack(ABC):
         pass
 
     @abstractmethod
-    def get_training_weight(self):
+    def get_target_time(self):
+        pass
+
+    @abstractmethod
+    def get_weight(self):
         pass
 
 
@@ -67,7 +72,10 @@ class Track1(AbstractTrack):
         width = self.track.get_width()
         return (width, height)
 
-    def  get_training_weight(self):
+    def  get_target_time(self):
+        return 13
+
+    def get_weight(self):
         return 1
 
     def load_finish(self):
@@ -132,7 +140,10 @@ class Track2(AbstractTrack):
         width = self.track.get_width()
         return (width, height)
 
-    def  get_training_weight(self):
+    def  get_target_time(self):
+        return 10
+
+    def get_weight(self):
         return 0.5
 
     def load_finish(self):
@@ -196,8 +207,11 @@ class Track3(AbstractTrack):
         width = self.track.get_width()
         return (width, height)
 
-    def  get_training_weight(self):
-        return 3
+    def  get_target_time(self):
+        return 20
+
+    def get_weight(self):
+        return 2
 
     def load_finish(self):
         finish = pygame.image.load("asset/finish.png")

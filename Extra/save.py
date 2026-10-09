@@ -75,19 +75,24 @@ def build_generation_summary(generation, cars, generation_data):
     fitnesses = sorted((agent["fitness"] for agent in cars), reverse=True)
     top = fitnesses[:TOP_N]
 
-    fitnesses = [agent["fitness"] for agent in cars]
+    best_lap_times = {}
+    for track_name, lap_data in generation_data.items():
+        all_laps = [lap for laps in lap_data.values() for lap in laps]
+        best_lap_times[track_name] = min(all_laps) if all_laps else None
 
     return {
         "generation": generation,
         "best_fitness": top[0],
-        f"                                top {TOP_N}avg_fitness": sum(top) / len(top),
+        f"top_{TOP_N}_avg_fitness": sum(top) / len(top),
         "finishers": {
             track_name: len(lap_data)
             for track_name, lap_data in generation_data.items()
-        }
+        },
+        "best_lap_time": best_lap_times,
     }
 
-def save_run_summary(seed, summaries):
+def save_run_summary(seed, summaries, settings):
     filepath = f"json/Summary"
     with open(f"{filepath}/summary_seed{seed}.json", "w") as file:
-        json.dump({"seed": seed, "generations": summaries}, file, indent=4)
+        json.dump(
+            {"seed": seed, "settings": settings, "generations": summaries},file,indent=4)

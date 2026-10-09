@@ -28,24 +28,19 @@ CROSSOVER_METHOD = "two_point"
 
 NUMBER_OF_CAR = 150
 NUMBER_OF_SAVED_BRAIN= NUMBER_OF_CAR # Number of car to have their brain saved
-NUMBER_OF_ELITE =  3 # Number of Top best car to continue into the next generation
+NUMBER_OF_ELITE =  5 # Number of Top best car to continue into the next generation
 
 MUTATION_AMOUNT = 0.4
 MUTATION_RATE = 0.2
 
-USE_CROSSOVER = True
+USE_CROSSOVER = False
 USE_MUTATION = True
 
 SIMULATION_TIME_MINUTES = 1
 TIMEOUT = 10
 
-TOTAL_GENERATION = 2
-
-#Seed
-SEED = 42 
-
-if SEED is not None:
-    random.seed(SEED)
+TOTAL_GENERATION = 3
+SEED = None
 
 #Debugging setting
 DEBUG = True
@@ -109,12 +104,44 @@ DARK_GRAY = (64, 64, 64)
 BLACK = (0,0,0)
 RED  =(255, 0, 0)
 
+#Set Seed
+if SEED is None:
+    SEED = random.randrange(0, 2**32)
+    
+random.seed(SEED)
+
+print(f"using Seed {SEED}")
+
 #Track Setup
 
 tracks = [Track1(),Track3()] 
 
 pygame.display.set_caption("Car Game")
 
+def build_run_settings(tracks):
+    return {
+        "number_of_car": NUMBER_OF_CAR,
+        "number_of_elite": NUMBER_OF_ELITE,
+        "selection_method": SELECTION_METHOD,
+        "mutation_method": MUTATION_METHOD,
+        "crossover_method": CROSSOVER_METHOD,
+        "use_crossover": USE_CROSSOVER,
+        "use_mutation": USE_MUTATION,
+        "mutation_amount": MUTATION_AMOUNT,
+        "mutation_rate": MUTATION_RATE,
+        "simulation_time_minutes": SIMULATION_TIME_MINUTES,
+        "timeout": TIMEOUT,
+        "total_generation": TOTAL_GENERATION,
+        "tracks": [
+            {
+                "name": track.__class__.__name__,
+                "weight": track.weight,
+                "target_time": track.target_time,
+                "checkpoints": len(track.checkpoints),
+            }
+            for track in tracks
+        ],
+    }
 
 
 def generateCars(N, track):
@@ -351,6 +378,7 @@ def run_track(cars, track):
 
 def main():
     generation = 1
+    settings = build_run_settings(tracks) 
     run_summary = []
     
     while generation <= TOTAL_GENERATION:
@@ -392,8 +420,16 @@ def main():
 
             for agent in cars:
                 #calculate each car progress through each track and edded up
-                track_fitness = track.training_weight * ((agent["lap_num"]-1) + agent["current_checkpoint"]/len(track.checkpoints))
-                agent["fitness"] += track_fitness
+                track_fitness = min(1,(agent["lap_num"]-1) + agent["current_checkpoint"]/len(track.checkpoints))
+                
+                if agent["lap_times"]:
+                    fastest_lap = min(agent["lap_times"])
+                    speed_bonus = min(track.target_time / fastest_lap, 2)
+                    track_fitness += speed_bonus
+
+
+
+                agent["fitness"] += track.weight * track_fitness
 
         best_cars = sorted(cars, key=lambda agent: agent["fitness"], reverse=True )[:NUMBER_OF_SAVED_BRAIN]
 
@@ -404,7 +440,7 @@ def main():
         save_lap_data(generation_data, generation)
 
         run_summary.append(build_generation_summary(generation, cars, generation_data))
-        save_run_summary(SEED, run_summary)
+        save_run_summary(SEED, run_summary, settings)
 
         generation += 1
     
