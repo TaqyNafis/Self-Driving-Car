@@ -18,9 +18,6 @@ class AbstractTrack(ABC):
         self.start_pos = self.get_start_pos()
         self.checkpoints = self.get_checkpoints()
 
-
-        
-
     @abstractmethod
     def load_track(self):
         pass
@@ -208,7 +205,7 @@ class Track3(AbstractTrack):
         return (width, height)
 
     def  get_target_time(self):
-        return 20
+        return 16
 
     def get_weight(self):
         return 2

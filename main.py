@@ -12,19 +12,14 @@ from NeuralNetwork.network import NeuralNetwork
 from NeuralNetwork.Visualizer import NetworkVisualizer
 from Extra.save import save_brains,load_brains,save_lap_data, build_generation_summary, save_run_summary
 from Game.event_handler import handle_events
-from Evolution.selection import select_parents ,get_selection_methods
+from Evolution.selection import select_parents ,get_selection_methods , truncation
 from Evolution.mutation import mutate, get_mutation_methods
 from Evolution.crossover import crossover, get_crossover_methods
 
 pygame.init()
-
 # Setting 
-# "random" "rank" "tournament" "roulette"
-SELECTION_METHOD = "tournament"
-# "default"
-MUTATION_METHOD = "default"
-#"one_point" "two point"
-CROSSOVER_METHOD = "two_point"
+
+SEED = 42
 
 NUMBER_OF_CAR = 150
 NUMBER_OF_SAVED_BRAIN= NUMBER_OF_CAR # Number of car to have their brain saved
@@ -33,15 +28,30 @@ NUMBER_OF_ELITE =  5 # Number of Top best car to continue into the next generati
 MUTATION_AMOUNT = 0.4
 MUTATION_RATE = 0.2
 
-USE_CROSSOVER = False
 USE_MUTATION = True
 
 SIMULATION_TIME_MINUTES = 1
 TIMEOUT = 10
 
-TOTAL_GENERATION = 10
-SEED = 25
+TOTAL_GENERATION = 150
 
+# Selection method
+USE_TRUNCATION = True
+PARENT_POOL_SIZE = 50 # how many car is eligeble to become parent if truncation is on
+SELECTION_METHOD = "tournament" # "random" "rank" "tournament" "roulette"
+
+# Mutation method
+MUTATION_METHOD = "default" # "default"
+
+#Crossover Method
+USE_CROSSOVER = False
+CROSSOVER_METHOD = "two_point" #"one_point" "two point"
+
+#selection setting
+TOURNAMENT_SIZE = 5 #tournament size for tournament selection pressure
+RANK_POWER = 1 # rank power to control Rank selection pressure
+
+ 
 #Debugging setting
 DEBUG = True
 
@@ -83,6 +93,22 @@ if SELECTION_METHOD not in get_selection_methods():
         f"Available methods: {get_selection_methods()}"
     )
 
+if RANK_POWER < 0:
+    raise ValueError("RANK_POWER cannot be negative")
+
+if TOURNAMENT_SIZE < 1:
+    raise ValueError("TOURNAMENT_SIZE must be at least 1")
+
+if USE_TRUNCATION:
+    if PARENT_POOL_SIZE < 1:
+        raise ValueError("PARENT_POOL_SIZE must be at least 1")
+
+    if PARENT_POOL_SIZE > NUMBER_OF_SAVED_BRAIN:
+        raise ValueError("PARENT_POOL_SIZE cannot exceed NUMBER_OF_SAVED_BRAIN")
+
+    if USE_CROSSOVER and PARENT_POOL_SIZE < 2:
+        raise ValueError("PARENT_POOL_SIZE must be at least 2 when crossover is enabled")
+
 if CROSSOVER_METHOD not in get_crossover_methods():
     raise ValueError(
         f"Unknown crossover method: {CROSSOVER_METHOD}. "
@@ -118,17 +144,36 @@ tracks = [Track1(),Track3()]
 
 pygame.display.set_caption("Car Game")
 
+
 def build_run_settings(tracks):
     return {
         "number_of_car": NUMBER_OF_CAR,
         "number_of_elite": NUMBER_OF_ELITE,
+        "number_of_saved_brain": NUMBER_OF_SAVED_BRAIN,
         "selection_method": SELECTION_METHOD,
-        "mutation_method": MUTATION_METHOD,
-        "crossover_method": CROSSOVER_METHOD,
+
+        **({"rank_power": RANK_POWER}
+           if SELECTION_METHOD == "rank" else {}),
+
+        **({"tournament_size": TOURNAMENT_SIZE}
+           if SELECTION_METHOD == "tournament" else {}),
+
         "use_crossover": USE_CROSSOVER,
         "use_mutation": USE_MUTATION,
-        "mutation_amount": MUTATION_AMOUNT,
-        "mutation_rate": MUTATION_RATE,
+
+        **({"mutation_method": MUTATION_METHOD, 
+            "mutation_amount": MUTATION_AMOUNT,
+            "mutation_rate": MUTATION_RATE
+            }
+        if USE_MUTATION else {}),
+
+        "use_truncation": USE_TRUNCATION,
+        **({"crossover_method": CROSSOVER_METHOD}
+        if USE_CROSSOVER else {}),
+
+        **({"parent_pool_size": PARENT_POOL_SIZE}
+           if USE_TRUNCATION else {}),
+
         "simulation_time_minutes": SIMULATION_TIME_MINUTES,
         "timeout": TIMEOUT,
         "total_generation": TOTAL_GENERATION,
@@ -397,9 +442,13 @@ def main():
                     { "brain": copy.deepcopy(c["brain"]), "parent_fitness": c["parent_fitness"] }
                     for c in cars[:number_to_load]
                 ]
+
+                if USE_TRUNCATION:
+                    parents = truncation(parents , PARENT_POOL_SIZE)
+
                 for i in range(elite_count, NUMBER_OF_CAR):
 
-                    parent1, parent2 = select_parents( parents, SELECTION_METHOD, USE_CROSSOVER)
+                    parent1, parent2 = select_parents( parents, SELECTION_METHOD, USE_CROSSOVER, RANK_POWER , TOURNAMENT_SIZE)
 
                     if USE_CROSSOVER:
                         cars[i]["brain"] = crossover(parent1["brain"], parent2["brain"], CROSSOVER_METHOD
@@ -429,8 +478,6 @@ def main():
                     fastest_lap = min(agent["lap_times"])
                     speed_bonus = min(track.target_time / fastest_lap, 2)
                     track_fitness += speed_bonus
-
-
 
                 agent["fitness"] += track.weight * track_fitness
 

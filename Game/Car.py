@@ -3,7 +3,7 @@ import math
 
 from Extra.utils import blit_rotate_center, scale_image, lerp
 
-CAR = scale_image(pygame.image.load("asset/car.png"),0.55)
+CAR = scale_image(pygame.image.load("asset/car.png"),0.35)
 
 
 class AbstractCar:
@@ -77,9 +77,4 @@ class AbstractCar:
 
 class PlayerCar(AbstractCar):
     IMG = CAR
-
-class TestCar(AbstractCar):
-    IMG = scale_image(pygame.image.load("asset/car.png"),1)
-    START_POS = (400,300)
-
 

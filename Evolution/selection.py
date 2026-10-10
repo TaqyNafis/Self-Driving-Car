@@ -14,7 +14,7 @@ def random_selection(parents,two_parents):
 
         return parent1, parent2
 
-def rank_selection(parents, two_parents):
+def rank_selection(parents, two_parents , rank_power):
     # RANK_POWER controls selection pressure: weight = 1 / rank**RANK_POWER
     # Higher = top cars dominate, lower = more diversity.
     # (approx. pick chance with 150 parents)
@@ -28,9 +28,8 @@ def rank_selection(parents, two_parents):
     #
     # Lower it if the population stalls or stops improving
     # Raise it if too many weak cars are being picked as parents
-    power = 1
 
-    rank_weights  =  [1 / (r ** power) for r in range(1, len(parents) + 1)]
+    rank_weights  =  [1 / (r ** rank_power) for r in range(1, len(parents) + 1)]
 
     parent1 = random.choices(parents, weights= rank_weights, k =1)[0]
 
@@ -43,23 +42,22 @@ def rank_selection(parents, two_parents):
              break
     return parent1 , parent2
 
-def tournament_selection_parent(parents):
+def tournament_selection_parent(parents, tournament_size):
 
-    TOURNAMENT_SIZE = 15
-    pool = random.sample(parents, k = min(len(parents) , TOURNAMENT_SIZE ))
+    pool = random.sample(parents, k = min(len(parents) , tournament_size ))
     parent = max(pool, key=lambda a:a["parent_fitness"])
 
     return parent
 
-def tournament_selection(parents, two_parents):
+def tournament_selection(parents, two_parents, tournament_size):
 
-    parent1 = tournament_selection_parent(parents)
+    parent1 = tournament_selection_parent(parents , tournament_size)
 
     if len(parents) == 1 or not two_parents:
         return parent1, parent1
     
     while True:
-        parent2 = tournament_selection_parent(parents)
+        parent2 = tournament_selection_parent(parents, tournament_size)
         if parent1 is not parent2:
              break
     return parent1 , parent2
@@ -77,18 +75,20 @@ def roulette_wheel_selection(parents, two_parents):
         if parent1 is not parent2:
              break
     return parent1 , parent2
+
+def truncation(parents, top_x = 30):
+    parents = parents[:top_x]
+    return parents
     
 
-   
-
-def select_parents(parents, method="random", two_parents=True):
+def select_parents(parents, method="random", two_parents=True, rank_power = 1, tournament_size = 15):
 
     if method == "random":
         return random_selection(parents, two_parents)
     elif method == "rank":
-        return rank_selection(parents, two_parents)
+        return rank_selection(parents, two_parents, rank_power)
     elif method == "tournament":
-        return tournament_selection(parents, two_parents)
+        return tournament_selection(parents, two_parents, tournament_size)
     elif method == "roulette":
         return roulette_wheel_selection(parents, two_parents)
     else:
